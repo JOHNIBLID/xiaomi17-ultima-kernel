@@ -88,11 +88,13 @@ jobs:
           export KBUILD_BUILD_USER="JOHNBLID"
           export KBUILD_BUILD_HOST="GitHubActions"
           
-          # ضبط وتثبيت الإعدادات المباشرة دون مسار خارجي
+          # تحييد vdso_prepare المعطل لتجاوز الخطأ فوراً
+          sed -i 's/vdso_prepare: prepare0/vdso_prepare:/g' arch/arm64/Makefile 2>/dev/null || true
+          sed -i 's/prepare: vdso_prepare/prepare:/g' arch/arm64/Makefile 2>/dev/null || true
+          
           make ARCH=arm64 gki_defconfig
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
           
-          # البناء المباشر لملف Image وتفادي تعارض vdso.lds
           make -j$(nproc --all) \
             ARCH=arm64 \
             CC=clang \
@@ -114,7 +116,6 @@ jobs:
           sed -i 's|block=/dev/block/bootdevice/by-name/boot|block=auto|g' anykernel.sh
           sed -i 's/device.name1=.*/device.name1=pudding/g' anykernel.sh
           
-          # نقل ملف الـ Image الناتج من المسار الصحيح المباشر
           cp ${{ env.KERNEL_ROOT }}/arch/arm64/boot/Image .
           zip -r9 $GITHUB_WORKSPACE/Xiaomi17_ReSukiSU_Ultima_v4.1.0.zip * -x .git README.md *placeholder
 
