@@ -23,8 +23,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib \
             gcc-multilib git gnupg gperf libelf-dev libncurses5-dev libssl-dev lzop \
-            python3 python-is-python3 rsync zip zlib1g-dev llvm lld dwarves wget tar
-
+            python3 python-is-python3 rsync zip zlib1g-dev llvm lld dwarves wget tar \
+            libdw-dev libdwarf-dev
+            
       - name: Checkout Kernel Source
         uses: actions/checkout@v4
         with:
