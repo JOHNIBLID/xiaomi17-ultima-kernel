@@ -43,15 +43,15 @@ jobs:
         run: |
           mkdir -p $GITHUB_WORKSPACE/toolchain
           cd $GITHUB_WORKSPACE/toolchain
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r530567.tar.gz || \
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r522817/clang-r522817.tar.gz
+          wget -q https://googlesource.com || \
+          wget -q https://googlesource.com
           tar -xzf clang-*.tar.gz
           rm -f clang-*.tar.gz
 
       - name: Fetch and Integrate ReSukiSU Ultima Source
         run: |
           cd $GITHUB_WORKSPACE
-          git clone --depth=1 https://github.com/spacealtctrl/ReSukiSU-Ultima.git -b main resukisu_src
+          git clone --depth=1 https://github.com -b main resukisu_src
           
           # إعداد مجلد drivers/resukisu
           mkdir -p ${{ env.KERNEL_ROOT }}/drivers/resukisu
@@ -71,10 +71,11 @@ jobs:
       - name: Enforce Ultima v4.1.0 Configuration
         run: |
           cd ${{ env.KERNEL_ROOT }}
+          chmod -R +x scripts/
           DEFCONFIG="arch/arm64/configs/gki_defconfig"
           
           # تثبيت الإعدادات البرمجية الصارمة لمدير Ultima v4.1.0
-          scripts/config --file $DEFCONFIG \
+          bash scripts/config --file $DEFCONFIG \
             -e KSU \
             -e KSU_MANUAL_HOOK \
             -e KPM \
@@ -102,7 +103,7 @@ jobs:
       - name: Package with AnyKernel3 (Xiaomi 17 Pudding)
         run: |
           cd $GITHUB_WORKSPACE
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
+          git clone --depth=1 https://github.com AnyKernel3
           cd AnyKernel3
           
           # ضبط الإعدادات لتوافق Xiaomi 17 (pudding) وتقسيم GKI الحديث
