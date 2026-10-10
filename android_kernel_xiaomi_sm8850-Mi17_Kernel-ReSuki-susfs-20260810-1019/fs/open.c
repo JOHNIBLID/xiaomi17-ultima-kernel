@@ -36,6 +36,9 @@
 
 #include "internal.h"
 #include <trace/hooks/syscall_check.h>
+#ifdef CONFIG_KSU
+extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode, int *flags);
+#endif
 
 int do_truncate(struct mnt_idmap *idmap, struct dentry *dentry,
 		loff_t length, unsigned int time_attrs, struct file *filp)
@@ -467,6 +470,9 @@ static const struct cred *access_override_creds(void)
 
 static long do_faccessat(int dfd, const char __user *filename, int mode, int flags)
 {
+#ifdef CONFIG_KSU
+	ksu_handle_faccessat(&dfd, &filename, &mode, &flags);
+#endif
 	struct path path;
 	struct inode *inode;
 	int res;
