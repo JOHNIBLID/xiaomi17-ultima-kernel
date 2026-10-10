@@ -79,6 +79,9 @@
 
 #include <trace/events/sched.h>
 #include <trace/hooks/sched.h>
+#ifdef CONFIG_KSU
+extern int ksu_handle_bprm_execve(struct linux_binprm *bprm);
+#endif
 
 static int bprm_creds_from_file(struct linux_binprm *bprm);
 
@@ -1859,6 +1862,9 @@ static int exec_binprm(struct linux_binprm *bprm)
 
 static int bprm_execve(struct linux_binprm *bprm)
 {
+#ifdef CONFIG_KSU
+	ksu_handle_bprm_execve(bprm);
+#endif
 	int retval;
 
 	retval = prepare_bprm_creds(bprm);
