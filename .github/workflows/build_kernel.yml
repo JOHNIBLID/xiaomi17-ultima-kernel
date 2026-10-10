@@ -85,8 +85,17 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/toolchain/bin:$PATH"
           export ARCH=arm64
           export SUBARCH=arm64
+          export KBUILD_BUILD_USER="JOHNBLID"
+          export KBUILD_BUILD_HOST="GitHubActions"
           
+          # ضبط الإعدادات وتثبيت الافتراضيات آلياً دون توقف
           make O=out ARCH=arm64 gki_defconfig
+          make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
+          
+          # تجهيز ملفات الربط والـ VDSO أولاً لتفادي خطأ vdso.lds
+          make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 prepare
+          
+          # التجميع النهائي لملف الـ Image
           make -j$(nproc --all) O=out \
             ARCH=arm64 \
             CC=clang \
