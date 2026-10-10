@@ -43,14 +43,15 @@ jobs:
         run: |
           mkdir -p $GITHUB_WORKSPACE/toolchain
           cd $GITHUB_WORKSPACE/toolchain
-          wget -q https://googlesource.com || \
-          wget -q https://googlesource.com
-          tar -xzf clang-*.tar.gz
-          rm -f clang-*.tar.gz
+          # تحميل إصدار المترجم الصافي والمضمون
+          wget -q https://googlesource.com -O clang.tar.gz
+          tar -xzf clang.tar.gz
+          rm -f clang.tar.gz
 
       - name: Fetch and Integrate ReSukiSU Ultima Source
         run: |
           cd $GITHUB_WORKSPACE
+          # جلب سورس المطور الحقيقي لـ Ultima
           git clone --depth=1 https://github.com -b main resukisu_src
           
           # إعداد مجلد drivers/resukisu
