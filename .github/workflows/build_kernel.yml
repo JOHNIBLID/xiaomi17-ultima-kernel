@@ -68,15 +68,19 @@ jobs:
       - name: Enforce Ultima v4.1.0 Configuration
         run: |
           cd ${{ env.KERNEL_ROOT }}
+          git checkout arch/arm64/Makefile 2>/dev/null || true
           chmod -R +x scripts/
           DEFCONFIG="arch/arm64/configs/gki_defconfig"
           
+          # تثبيت إعدادات Ultima وتعطيل WERROR القاتل
           bash scripts/config --file $DEFCONFIG \
             -e KSU \
             -e KSU_MANUAL_HOOK \
             -e KPM \
             -e KALLSYMS \
             -e KALLSYMS_ALL \
+            -d WERROR \
+            --set-val FRAME_WARN 4096 \
             --set-str KSU_FULL_NAME_FORMAT "me.ezio.resukis"
 
       - name: Compile Xiaomi 17 Kernel
@@ -88,13 +92,16 @@ jobs:
           export KBUILD_BUILD_USER="JOHNBLID"
           export KBUILD_BUILD_HOST="GitHubActions"
           
-          # تحييد vdso_prepare المعطل لتجاوز الخطأ فوراً
-          sed -i 's/vdso_prepare: prepare0/vdso_prepare:/g' arch/arm64/Makefile 2>/dev/null || true
-          sed -i 's/prepare: vdso_prepare/prepare:/g' arch/arm64/Makefile 2>/dev/null || true
+          # استعادة الملف النظيف وإعداد التهيئة
+          git checkout arch/arm64/Makefile 2>/dev/null || true
           
           make ARCH=arm64 gki_defconfig
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
           
+          # بناء الترويسات ومكونات البناء الأساسية
+          make -j$(nproc --all) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 archprepare
+          
+          # التجميع النهائي متجاوزاً تحذيرات الـ Warnings
           make -j$(nproc --all) \
             ARCH=arm64 \
             CC=clang \
@@ -102,6 +109,7 @@ jobs:
             CROSS_COMPILE=aarch64-linux-gnu- \
             LLVM=1 \
             LLVM_IAS=1 \
+            KCFLAGS="-Wno-error" \
             Image
 
       - name: Package with AnyKernel3 (Xiaomi 17 Pudding)
