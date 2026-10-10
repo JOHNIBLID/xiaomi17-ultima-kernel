@@ -43,27 +43,22 @@ jobs:
         run: |
           mkdir -p $GITHUB_WORKSPACE/toolchain
           cd $GITHUB_WORKSPACE/toolchain
-          # تحميل إصدار المترجم الصافي والمضمون
-          wget -q https://googlesource.com -O clang.tar.gz
-          tar -xzf clang.tar.gz
-          rm -f clang.tar.gz
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r522817.tar.gz
+          tar -xzf clang-r522817.tar.gz
+          rm -f clang-r522817.tar.gz
 
       - name: Fetch and Integrate ReSukiSU Ultima Source
         run: |
           cd $GITHUB_WORKSPACE
-          # جلب سورس المطور الحقيقي لـ Ultima
-          git clone --depth=1 https://github.com -b main resukisu_src
+          git clone --depth=1 https://github.com/spacealtctrl/ReSukiSU-Ultima.git -b main resukisu_src
           
-          # إعداد مجلد drivers/resukisu
           mkdir -p ${{ env.KERNEL_ROOT }}/drivers/resukisu
           cp -rf resukisu_src/kernel/* ${{ env.KERNEL_ROOT }}/drivers/resukisu/
           
-          # معالجة فخ الرابط الرمزي للـ UAPI ونسخ الترويسات الحقيقية
           rm -rf ${{ env.KERNEL_ROOT }}/drivers/resukisu/include/uapi
           mkdir -p ${{ env.KERNEL_ROOT }}/drivers/resukisu/include/uapi
           cp -rf resukisu_src/uapi/* ${{ env.KERNEL_ROOT }}/drivers/resukisu/include/uapi/
           
-          # تأمين ترويسات النظام العامة
           mkdir -p ${{ env.KERNEL_ROOT }}/include/uapi/linux
           cp -rf resukisu_src/uapi/* ${{ env.KERNEL_ROOT }}/include/uapi/linux/ 2>/dev/null || true
           
@@ -75,7 +70,6 @@ jobs:
           chmod -R +x scripts/
           DEFCONFIG="arch/arm64/configs/gki_defconfig"
           
-          # تثبيت الإعدادات البرمجية الصارمة لمدير Ultima v4.1.0
           bash scripts/config --file $DEFCONFIG \
             -e KSU \
             -e KSU_MANUAL_HOOK \
@@ -104,17 +98,15 @@ jobs:
       - name: Package with AnyKernel3 (Xiaomi 17 Pudding)
         run: |
           cd $GITHUB_WORKSPACE
-          git clone --depth=1 https://github.com AnyKernel3
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
           cd AnyKernel3
           
-          # ضبط الإعدادات لتوافق Xiaomi 17 (pudding) وتقسيم GKI الحديث
           sed -i 's/do.device.check=1/do.device.check=0/g' anykernel.sh
           sed -i 's/do.modules=1/do.modules=0/g' anykernel.sh
           sed -i 's/is_slot_device=0/is_slot_device=1/g' anykernel.sh
           sed -i 's|block=/dev/block/bootdevice/by-name/boot|block=auto|g' anykernel.sh
           sed -i 's/device.name1=.*/device.name1=pudding/g' anykernel.sh
           
-          # نقل ملف الـ Image الناتج
           cp ${{ env.KERNEL_ROOT }}/out/arch/arm64/boot/Image .
           zip -r9 $GITHUB_WORKSPACE/Xiaomi17_ReSukiSU_Ultima_v4.1.0.zip * -x .git README.md *placeholder
 
