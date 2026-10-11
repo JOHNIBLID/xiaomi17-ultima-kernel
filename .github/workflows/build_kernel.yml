@@ -93,9 +93,8 @@ jobs:
           # استعادة الملف الأصلي النظيف
           git checkout arch/arm64/Makefile 2>/dev/null || true
           
-          # تحييد استدعاء vdso_prepare بأمان تام دون حذف أي endif
-          sed -i 's/prepare: vdso_prepare/prepare:/g' arch/arm64/Makefile
-          sed -i 's/vdso_prepare: prepare0/#vdso_prepare: prepare0/g' arch/arm64/Makefile
+          # إيقاف استدعاء بناء مجلد الـ vdso القديم المكسور في السطر 232
+          sed -i 's|$(build)=arch/arm64/kernel/vdso|#$(build)=arch/arm64/kernel/vdso|g' arch/arm64/Makefile
           
           make ARCH=arm64 gki_defconfig
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
@@ -110,7 +109,7 @@ jobs:
             LLVM_IAS=1 \
             KCFLAGS="-Wno-error" \
             Image
-
+            
       - name: Package with AnyKernel3 (Xiaomi 17 Pudding)
         run: |
           cd $GITHUB_WORKSPACE
