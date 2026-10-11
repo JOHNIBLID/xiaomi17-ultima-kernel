@@ -80,9 +80,8 @@ jobs:
             -e KALLSYMS_ALL \
             -d WERROR \
             --set-val FRAME_WARN 4096 \
-            --set-str KSU_FULL_NAME_FORMAT "me.ezio.resukis"
-
-- name: Compile Xiaomi 17 Kernel
+            
+      - name: Compile Xiaomi 17 Kernel
         run: |
           cd ${{ env.KERNEL_ROOT }}
           export PATH="$GITHUB_WORKSPACE/toolchain/bin:$PATH"
@@ -117,7 +116,7 @@ jobs:
             LLVM_IAS=1 \
             KCFLAGS="-Wno-error" \
             Image
-
+        
       - name: Package with AnyKernel3 (Xiaomi 17 Pudding)
         run: |
           cd $GITHUB_WORKSPACE
