@@ -68,6 +68,7 @@ jobs:
       - name: Enforce Ultima v4.1.0 Configuration
         run: |
           cd ${{ env.KERNEL_ROOT }}
+          git checkout arch/arm64/Makefile 2>/dev/null || true
           chmod -R +x scripts/
           DEFCONFIG="arch/arm64/configs/gki_defconfig"
           
@@ -93,13 +94,19 @@ jobs:
           # استعادة الملف الأصلي النظيف
           git checkout arch/arm64/Makefile 2>/dev/null || true
           
-          # إيقاف استدعاء بناء مجلد الـ vdso القديم المكسور في السطر 232
-          sed -i 's|$(build)=arch/arm64/kernel/vdso|#$(build)=arch/arm64/kernel/vdso|g' arch/arm64/Makefile
+          # 1. إصلاح رابط الـ dt-bindings المكسور
+          mkdir -p scripts/dtc/include-prefixes
+          ln -sf ../../include/dt-bindings scripts/dtc/include-prefixes/dt-bindings 2>/dev/null || true
+          
+          # 2. إنشاء وتأمين ملف vdso-offsets.h وتفريغ استدعاء vdso_prepare القديم
+          mkdir -p include/generated
+          touch include/generated/vdso-offsets.h
+          sed -i 's/$(Q)$(MAKE) $(build)=arch\/arm64\/kernel\/vdso.*/@true/g' arch/arm64/Makefile 2>/dev/null || true
           
           make ARCH=arm64 gki_defconfig
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
           
-          # التجميع النهائي لملف الـ Image
+          # التجميع المباشر لملف Image دون الوقوف عند التحذيرات
           make -j$(nproc --all) \
             ARCH=arm64 \
             CC=clang \
@@ -109,7 +116,7 @@ jobs:
             LLVM_IAS=1 \
             KCFLAGS="-Wno-error" \
             Image
-            
+
       - name: Package with AnyKernel3 (Xiaomi 17 Pudding)
         run: |
           cd $GITHUB_WORKSPACE
