@@ -90,13 +90,17 @@ jobs:
           export KBUILD_BUILD_USER="JOHNBLID"
           export KBUILD_BUILD_HOST="GitHubActions"
           
-          # تفريغ هدف vdso_prepare القديم ليتجاوزه المترجم بنجاح فوري
-          sed -i '/vdso_prepare:/,/^$/c\vdso_prepare:\n\t@true' arch/arm64/Makefile
+          # استعادة الملف الأصلي النظيف
+          git checkout arch/arm64/Makefile 2>/dev/null || true
+          
+          # تحييد استدعاء vdso_prepare بأمان تام دون حذف أي endif
+          sed -i 's/prepare: vdso_prepare/prepare:/g' arch/arm64/Makefile
+          sed -i 's/vdso_prepare: prepare0/#vdso_prepare: prepare0/g' arch/arm64/Makefile
           
           make ARCH=arm64 gki_defconfig
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
           
-          # البناء والتجميع المباشر متجاوزاً أخطاء التحذيرات
+          # التجميع النهائي لملف الـ Image
           make -j$(nproc --all) \
             ARCH=arm64 \
             CC=clang \
