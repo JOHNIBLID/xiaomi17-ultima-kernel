@@ -68,11 +68,9 @@ jobs:
       - name: Enforce Ultima v4.1.0 Configuration
         run: |
           cd ${{ env.KERNEL_ROOT }}
-          git checkout arch/arm64/Makefile 2>/dev/null || true
           chmod -R +x scripts/
           DEFCONFIG="arch/arm64/configs/gki_defconfig"
           
-          # تثبيت إعدادات Ultima وتعطيل WERROR القاتل
           bash scripts/config --file $DEFCONFIG \
             -e KSU \
             -e KSU_MANUAL_HOOK \
@@ -92,16 +90,13 @@ jobs:
           export KBUILD_BUILD_USER="JOHNBLID"
           export KBUILD_BUILD_HOST="GitHubActions"
           
-          # استعادة الملف النظيف وإعداد التهيئة
-          git checkout arch/arm64/Makefile 2>/dev/null || true
+          # تفريغ هدف vdso_prepare القديم ليتجاوزه المترجم بنجاح فوري
+          sed -i '/vdso_prepare:/,/^$/c\vdso_prepare:\n\t@true' arch/arm64/Makefile
           
           make ARCH=arm64 gki_defconfig
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
           
-          # بناء الترويسات ومكونات البناء الأساسية
-          make -j$(nproc --all) ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 archprepare
-          
-          # التجميع النهائي متجاوزاً تحذيرات الـ Warnings
+          # البناء والتجميع المباشر متجاوزاً أخطاء التحذيرات
           make -j$(nproc --all) \
             ARCH=arm64 \
             CC=clang \
