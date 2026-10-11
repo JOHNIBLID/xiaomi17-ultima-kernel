@@ -72,6 +72,7 @@ jobs:
           chmod -R +x scripts/
           DEFCONFIG="arch/arm64/configs/gki_defconfig"
           
+          # تثبيت إعدادات Ultima وتعطيل خيارات الـ vsyscall القديمة والـ initramfs المدمج
           bash scripts/config --file $DEFCONFIG \
             -e KSU \
             -e KSU_MANUAL_HOOK \
@@ -79,8 +80,11 @@ jobs:
             -e KALLSYMS \
             -e KALLSYMS_ALL \
             -d WERROR \
+            -d GENERIC_TIME_VSYSCALL \
+            -d BLK_DEV_INITRD \
             --set-val FRAME_WARN 4096 \
-            
+            --set-str KSU_FULL_NAME_FORMAT "me.ezio.resukis"
+
       - name: Compile Xiaomi 17 Kernel
         run: |
           cd ${{ env.KERNEL_ROOT }}
@@ -90,23 +94,25 @@ jobs:
           export KBUILD_BUILD_USER="JOHNBLID"
           export KBUILD_BUILD_HOST="GitHubActions"
           
-          # استعادة الملف الأصلي النظيف أولاً
+          # استعادة الملف الأصلي النظيف
           git checkout arch/arm64/Makefile 2>/dev/null || true
           
-          # 1. تأمين مسار روابط الـ dt-bindings (نجحت في التخطي)
+          # 1. تأمين مسارات الـ dt-bindings
           mkdir -p scripts/dtc/include-prefixes
           ln -sf ../../include/dt-bindings scripts/dtc/include-prefixes/dt-bindings 2>/dev/null || true
           
-          # 2. تحييد كتلة vdso_prepare والسطر التابع لها بالكامل
-          sed -i 's/.*vdso-offsets.h.*//g' arch/arm64/Makefile
-          sed -i 's/.*vdso_prepare.*/vdso_prepare:\n\t@true/g' arch/arm64/Makefile
+          # 2. إنشاء وتأمين ملف vdso-offsets.h وتفريغ استدعاء vdso_prepare القديم
           mkdir -p include/generated
           touch include/generated/vdso-offsets.h
+          sed -i 's/$(Q)$(MAKE) $(build)=arch\/arm64\/kernel\/vdso.*/@true/g' arch/arm64/Makefile 2>/dev/null || true
           
           make ARCH=arm64 gki_defconfig
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
           
-          # التجميع النهائي لملف الـ Image
+          # تجهيز ملفات المخططات (vmlinux.lds) والترويسات أولاً
+          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 prepare
+          
+          # التجميع النهائي المباشر لملف الـ Image
           make -j$(nproc --all) \
             ARCH=arm64 \
             CC=clang \
@@ -116,7 +122,7 @@ jobs:
             LLVM_IAS=1 \
             KCFLAGS="-Wno-error" \
             Image
-        
+
       - name: Package with AnyKernel3 (Xiaomi 17 Pudding)
         run: |
           cd $GITHUB_WORKSPACE
